@@ -1,14 +1,6 @@
 int tvx, tvy;
 int animx, animy;
 int deck1x, deck1y, deck2x, deck2y;
-int slider1x, slider1y, slider2x, slider2y;
-float volumeAdjust1 = 0;
-float volumeAdjust2 = 0;
-
-boolean deck1Playing = false;
-boolean deck2Playing = false;
-boolean sync = false;
-boolean syncDone = false;
 float rotateDeck1 = 0;
 float rotateDeck2 = 0;
 float currentFrame = 0;
@@ -18,6 +10,15 @@ PImage TV;
 Maxim maxim;
 AudioPlayer player1;
 AudioPlayer player2;
+
+int slider1x, slider1y, slider2x, slider2y;
+float volumeAdjust1 = 0;
+float volumeAdjust2 = 0;
+
+boolean deck1Playing = false;
+boolean deck2Playing = false;
+boolean sync = false;
+boolean syncDone = false;
 
 
 void setup()
@@ -30,19 +31,17 @@ void setup()
   maxim = new Maxim(this);
   player1 = maxim.loadFile("beat.wav");
   player1.setLooping(true);
-  player1.volume(volumeAdjust1/recordPlayer[0].height);
   player2 = maxim.loadFile("synth.wav");
   player2.setLooping(true);
-  player2.volume(volumeAdjust2/recordPlayer[0].height);
-}
+  
+        player1.volume(volumeAdjust1/recordPlayer[0].height);
+        player2.volume(volumeAdjust2/recordPlayer[0].height);
+}   
 
 void draw()
 {
   background(25); 
   imageMode(CENTER);
-  
-
-  
   image(images[(int)currentFrame], width/2, images[0].height/2, images[0].width, images[0].height);
   image(TV, width/2, TV.height/2, TV.width, TV.height);
   deck1x = (width/2)-recordPlayer[0].width/2;
