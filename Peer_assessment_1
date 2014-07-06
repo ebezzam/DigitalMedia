@@ -34,8 +34,8 @@ void setup()
   player2 = maxim.loadFile("synth.wav");
   player2.setLooping(true);
   
-        player1.volume(volumeAdjust1/recordPlayer[0].height);
-        player2.volume(volumeAdjust2/recordPlayer[0].height);
+  player1.volume(volumeAdjust1/recordPlayer[0].height);
+  player2.volume(volumeAdjust2/recordPlayer[0].height);
 }   
 
 void draw()
