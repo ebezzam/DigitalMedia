@@ -1,0 +1,195 @@
+int tvx, tvy;
+int animx, animy;
+int deck1x, deck1y, deck2x, deck2y;
+int slider1x, slider1y, slider2x, slider2y;
+float volumeAdjust1 = 0;
+float volumeAdjust2 = 0;
+
+boolean deck1Playing = false;
+boolean deck2Playing = false;
+boolean sync = false;
+boolean syncDone = false;
+float rotateDeck1 = 0;
+float rotateDeck2 = 0;
+float currentFrame = 0;
+PImage [] images;
+PImage [] recordPlayer;
+PImage TV;
+Maxim maxim;
+AudioPlayer player1;
+AudioPlayer player2;
+
+
+void setup()
+{
+  size(480,640);
+  imageMode(CENTER);
+  images = loadImages("Animation_data/movie", ".jpg", 134);
+  recordPlayer = loadImages("black-record_", ".png", 36);
+  TV = loadImage("TV.png");
+  maxim = new Maxim(this);
+  player1 = maxim.loadFile("beat.wav");
+  player1.setLooping(true);
+  player1.volume(volumeAdjust1/recordPlayer[0].height);
+  player2 = maxim.loadFile("synth.wav");
+  player2.setLooping(true);
+  player2.volume(volumeAdjust2/recordPlayer[0].height);
+}
+
+void draw()
+{
+  background(25); 
+  imageMode(CENTER);
+  
+
+  
+  image(images[(int)currentFrame], width/2, images[0].height/2, images[0].width, images[0].height);
+  image(TV, width/2, TV.height/2, TV.width, TV.height);
+  deck1x = (width/2)-recordPlayer[0].width/2;
+  deck1y = height - height/40 - recordPlayer[0].height/2;
+  image(recordPlayer[(int) rotateDeck1], deck1x, deck1y, recordPlayer[0].width, recordPlayer[0].height);
+  deck2x = (width/2)+recordPlayer[0].width/2;
+  deck2y = height - height/40 - recordPlayer[0].height/2;
+  image(recordPlayer[(int) rotateDeck2], deck2x, deck2y, recordPlayer[0].width, recordPlayer[0].height);
+
+  if (deck1Playing || deck2Playing) {
+    currentFrame++;
+  }
+  
+  if (currentFrame >= images.length) {
+
+    currentFrame = 0;
+  }
+
+  if (deck1Playing) {
+
+    rotateDeck1++;
+
+    if (rotateDeck1 >= recordPlayer.length) {
+
+      rotateDeck1 = 0;
+    }
+  }
+
+  if (deck2Playing) {
+
+    rotateDeck2++;
+
+    if (rotateDeck2 >= recordPlayer.length) {
+
+      rotateDeck2 = 0;
+    }
+  }
+  
+  
+  // sync button
+  if (!sync) {
+    strokeWeight(2);
+    stroke(0, 0, 0);
+    fill(255, 0, 0);
+    rect(width/2-width/20, height/2, 50, 50);
+    syncDone = false;
+  }
+  
+  if (sync) {
+    strokeWeight(2);
+    stroke(0, 0, 0);
+    fill(0, 255, 0);
+    rect(width/2-width/20, height/2, 50, 50); 
+    
+    if (deck1Playing && deck2Playing && syncDone == false) {
+      player1.cue(0);
+      player2.cue(0);
+      player1.play();
+      player2.play();
+      syncDone = true;
+    }
+    
+    if (!deck1Playing && deck2Playing) {
+      syncDone = false;
+    }
+
+    if (deck1Playing && !deck2Playing) {
+      syncDone = false;
+    }     
+  }
+  
+  
+  // slider 1
+  strokeWeight(2);
+  stroke(0, 0, 0);
+  fill(0, 200, 0);
+  slider1x = width/80;
+  slider1y = height - height/40 - recordPlayer[0].height;
+  rect(slider1x, slider1y, 20, recordPlayer[0].height);
+  
+  strokeWeight(2);
+  stroke(0, 0, 0);
+  fill(200, 0, 0);
+  slider1x = width/80;
+  slider1y = height - height/40 - recordPlayer[0].height;
+  rect(slider1x, slider1y, 20, recordPlayer[0].height-volumeAdjust1);
+  
+  // slider 2
+  strokeWeight(2);
+  stroke(0, 0, 0);
+  fill(0, 200, 0);
+  slider2x = width - width/18;
+  slider2y = height - height/40 - recordPlayer[0].height;
+  rect(slider2x, slider2y, 20, recordPlayer[0].height);  
+ 
+  strokeWeight(2);
+  stroke(0, 0, 0);
+  fill(200, 0, 0);
+  slider2x = width - width/18;
+  slider2y = height - height/40 - recordPlayer[0].height;
+  rect(slider2x, slider2y, 20, recordPlayer[0].height-volumeAdjust2);
+}
+
+
+void mouseClicked()
+{
+  if(dist(mouseX, mouseY, deck1x, deck1y) < recordPlayer[0].width/2){
+    deck1Playing = !deck1Playing;
+  }
+  
+  if (deck1Playing) {
+    player1.play();
+  } 
+  else {
+    player1.stop();
+  }
+
+  if(dist(mouseX, mouseY, deck2x, deck2y) < recordPlayer[0].width/2){
+    deck2Playing = !deck2Playing;
+  }
+
+ if (deck2Playing) {
+    player2.play();
+  } 
+  else {
+
+    player2.stop();
+  }
+  
+  if( (mouseX < width/2-width/20 + 50) && (mouseX > width/2-width/20) && (mouseY > height/2) && (mouseY < height/2+50)  ){  
+    sync = !sync;
+  }
+}
+
+void mouseDragged() {
+   
+ if ( (mouseX < (slider1x+20)) && (mouseY > slider1y) && (mouseY < height - height/40))  {
+   volumeAdjust1 = map(mouseY, height - height/40, slider1y, 0, recordPlayer[0].height); 
+ }
+ 
+ player1.volume(volumeAdjust1/recordPlayer[0].height);
+ 
+ 
+ if ( (mouseX > (slider2x)) && (mouseY > slider1y) && (mouseY < height - height/40))  {
+   volumeAdjust2 = map(mouseY, height - height/40, slider1y, 0, recordPlayer[0].height); 
+ }
+ 
+ player2.volume(volumeAdjust2/recordPlayer[0].height);
+
+}
