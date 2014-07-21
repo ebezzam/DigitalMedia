@@ -1,0 +1,336 @@
+import org.jbox2d.util.nonconvex.*;
+import org.jbox2d.dynamics.contacts.*;
+import org.jbox2d.testbed.*;
+import org.jbox2d.collision.*;
+import org.jbox2d.common.*;
+import org.jbox2d.dynamics.joints.*;
+import org.jbox2d.p5.*;
+import org.jbox2d.dynamics.*;
+
+// audio stuff
+Maxim maxim;
+AudioPlayer cheer;
+
+// pictures
+PImage fieldImage, player1Image, player2Image, ballImage;
+
+// Physics objects
+Physics physics;
+Body goal1, goal2, ball;
+Body [] Team2;
+Body [] Team1;
+
+// a handler that will detect collisions
+CollisionDetector detector; 
+
+// update positions of players and ball
+boolean[] keys = new boolean[8];
+// player1
+final int A = 0;
+final int D = 1;
+final int W = 2;
+final int S = 3;
+// player2
+final int J = 4;
+final int L = 5;
+final int I = 6;
+final int K = 7;
+
+// global variables
+int score1 = 0;
+int score2 = 0;
+boolean goalScored = false;
+int select1 = 0;
+int select2 = 0;
+int waitTime = 0;
+int goalSize = 150;
+int ballSize = 30;
+int playerSize = 80;
+
+
+void setup() {
+  size(1028,768);
+  background(0, 255, 75);
+  frameRate(60);
+
+  imageMode(CENTER);
+  rectMode(CENTER);
+  
+  // Create physics world
+  physics = new Physics(this, width, height, 0, 0, width*2, height*2, width, height, 100);
+  physics.setCustomRenderingMethod(this, "myCustomRenderer");
+  
+  // sets up the collision callbacks
+  detector = new CollisionDetector (physics, this);
+  
+  // Add fixed obstacles (goals), of density 0.0
+  physics.setDensity(1);
+  goal1 = physics.createRect(0, height/2 - goalSize/2, 15, height/2 + goalSize/2);
+  goal2 = physics.createRect(width - 15, height/2 - goalSize/2, width, height/2 + goalSize/2);
+  
+  // Add moving objects (players, ball) of non-zero density
+  physics.setDensity(50.0);
+  Team1 = new Body[2];
+  Team1[0] = physics.createRect(width/4-playerSize/2, height/2-3*playerSize/2, width/4+playerSize/2, height/2-playerSize/2);
+  Team1[1] = physics.createRect(width/4-playerSize/2, height/2+3*playerSize/2, width/4+playerSize/2, height/2+playerSize/2);
+  
+  Team2 = new Body[2];
+  Team2[0] = physics.createRect(3*width/4-playerSize/2, height/2-3*playerSize/2, 3*width/4+playerSize/2, height/2-playerSize/2);
+  Team2[1] = physics.createRect(3*width/4-playerSize/2, height/2+3*playerSize/2, 3*width/4+playerSize/2, height/2+playerSize/2);
+
+  physics.setDensity(1.0);
+  ball = physics.createCircle(width/2, height/2, ballSize/2); 
+  ball.setAngularVelocity(1.0);
+  
+  // set up sounds 
+  maxim = new Maxim(this);
+  cheer = maxim.loadFile("cheer.wav");
+  cheer.setLooping(true);
+  cheer.volume(0.25);
+  cheer.play();
+  
+  // set up images
+  fieldImage = loadImage("field.jpg");
+  player1Image = loadImage("player1.png");
+  player2Image = loadImage("player2.png");
+  ballImage = loadImage("ball.png");
+}
+
+void draw() {
+  
+  image(fieldImage, width/2, height/2, width, height);
+  
+  fill(255);
+  textSize(20);
+  text("Red Team: " + score1, 20, 30);
+  text("Blue Team: " + score2, width-150, 30);
+  
+  // draw goals
+  fill(220);
+  rect(5, height/2, 15, goalSize);       // goal1
+  rect(width-5, height/2, 15, goalSize); // 
+  
+  textSize(100);
+    
+  
+  if (goalScored)
+  {
+    cheer.stop();
+    
+    cheer.volume(1.0);
+    cheer.cue(0);
+    cheer.play();
+    while(waitTime < 1000000) {
+      Team1[0].setPosition(physics.screenToWorld(new Vec2(width/4, height/2-playerSize)));
+      Team1[1].setPosition(physics.screenToWorld(new Vec2(width/4, height/2+playerSize)));
+      Team2[0].setPosition(physics.screenToWorld(new Vec2(3*width/4, height/2-playerSize)));
+      Team2[1].setPosition(physics.screenToWorld(new Vec2(3*width/4, height/2+playerSize)));
+      ball.setPosition(physics.screenToWorld(new Vec2(width/2, height/2)));
+      waitTime++;
+    }
+    waitTime = 0;
+    goalScored = false;
+    cheer.volume(0.25);
+  }
+  
+  // game over, SPACE to restart
+  int gameOver = 1;
+  if (score1 == gameOver || score2 == gameOver)
+  {
+    if (score1 == gameOver)
+    {
+      fill(255, 70, 0);
+      text("RED TEAM WINS!", width/8, height/4);
+    }
+    if (score2 == gameOver)
+    {
+      fill(0, 102, 255);
+      text("BLUE TEAM WINS!", width/8-50, height/4);
+    }
+    // make sure players can't move
+    for (int i = 0; i < 8; i++)
+      keys[i] = false;
+  }
+  
+  // moving the players
+  Vec2 team1Pos = physics.worldToScreen(Team1[select1].getWorldCenter());
+  
+  // team 1 movements
+  if (keys[D]) { // right
+    Team1[select1].setPosition(physics.screenToWorld(new Vec2(team1Pos.x+5, team1Pos.y)));
+  } 
+  if (keys[A]) { // left
+    Team1[select1].setPosition(physics.screenToWorld(new Vec2(team1Pos.x-5, team1Pos.y)));
+  } 
+  if (keys[W]) { // up
+    Team1[select1].setPosition(physics.screenToWorld(new Vec2(team1Pos.x, team1Pos.y-5)));
+  } 
+  if (keys[S]) { // down
+    Team1[select1].setPosition(physics.screenToWorld(new Vec2(team1Pos.x, team1Pos.y+5)));
+  } 
+  
+  Vec2 team2Pos = physics.worldToScreen(Team2[select2].getWorldCenter());
+  // team 2 movements
+  if (keys[L]) { // right
+    Team2[select2].setPosition(physics.screenToWorld(new Vec2(team2Pos.x+5, team2Pos.y)));
+  } 
+  if (keys[J]) { // left
+    Team2[select2].setPosition(physics.screenToWorld(new Vec2(team2Pos.x-5, team2Pos.y)));
+  } 
+  if (keys[I]) { // up
+    Team2[select2].setPosition(physics.screenToWorld(new Vec2(team2Pos.x, team2Pos.y-5)));
+  } 
+  if (keys[K]) { // down
+    Team2[select2].setPosition(physics.screenToWorld(new Vec2(team2Pos.x, team2Pos.y+5)));
+  } 
+
+}
+
+
+void keyPressed() {
+
+     switch (key) {
+     // player1
+     case 'd': 
+        keys[D] = true;
+        break;
+      case 'a': 
+        keys[A] = true;
+        break;
+      case 'w':
+        keys[W] = true;
+        break;
+      case 's':
+        keys[S] = true;
+        break;
+      case 'q':                  // switch players
+        if(select1 == 0)
+          select1 = 1;
+        else
+          select1 = 0; 
+        break;
+     // player2
+     case 'j': 
+        keys[J] = true;
+        break;
+      case 'l': 
+        keys[L] = true;
+        break;
+      case 'i':
+        keys[I] = true;
+        break;
+      case 'k':
+        keys[K] = true;
+        break;
+      case 'u':                  // switch players
+        if(select2 == 0)
+          select2 = 1;
+        else
+          select2 = 0;
+        break;
+      // RESTART GAME
+      case 'n':                  
+        score1 = 0;
+        score2 = 0;
+        break;
+    } // end switch
+
+} // end keyPressed
+
+void keyReleased() {
+switch (key) {
+  // player 1
+      case 'd': 
+        keys[D] = false;
+        break;
+      case 'a': 
+        keys[A] = false;
+        break;
+      case 'w':
+        keys[W] = false;
+        break;
+      case 's':
+        keys[S] = false;
+        break;
+  // player 2
+      case 'j': 
+        keys[J] = false;
+        break;
+      case 'l': 
+        keys[L] = false;
+        break;
+      case 'i':
+        keys[I] = false;
+        break;
+      case 'k':
+        keys[K] = false;
+        break;
+    } // end switch
+}
+
+
+
+void myCustomRenderer(World world) {
+
+  // draw players
+  Vec2 screenPlayer1Pos = physics.worldToScreen(Team1[0].getWorldCenter());
+  float player1Angle = physics.getAngle(Team1[0]);
+  pushMatrix();
+    translate(screenPlayer1Pos.x, screenPlayer1Pos.y);
+    rotate(-radians(player1Angle));
+    image(player1Image, 0, 0, playerSize, playerSize);
+  popMatrix();
+  
+  Vec2 screenPlayer3Pos = physics.worldToScreen(Team1[1].getWorldCenter());
+  float player3Angle = physics.getAngle(Team1[1]);
+  pushMatrix();
+    translate(screenPlayer3Pos.x, screenPlayer3Pos.y);
+    rotate(-radians(player3Angle));
+    image(player1Image, 0, 0, playerSize, playerSize);
+  popMatrix();
+  
+  Vec2 screenPlayer2Pos = physics.worldToScreen(Team2[0].getWorldCenter());
+  float player2Angle = physics.getAngle(Team2[0]);
+  pushMatrix();
+    translate(screenPlayer2Pos.x, screenPlayer2Pos.y);
+    rotate(-radians(player2Angle));
+    image(player2Image, 0, 0, playerSize, playerSize);
+  popMatrix();
+  
+  Vec2 screenPlayer4Pos = physics.worldToScreen(Team2[1].getWorldCenter());
+  float player4Angle = physics.getAngle(Team2[1]);
+  pushMatrix();
+    translate(screenPlayer4Pos.x, screenPlayer4Pos.y);
+    rotate(-radians(player4Angle));
+    image(player2Image, 0, 0, playerSize, playerSize);
+  popMatrix();
+  
+  // draw ball
+  Vec2 screenBallPos = physics.worldToScreen(ball.getWorldCenter());
+  float ballAngle = physics.getAngle(ball);
+  pushMatrix();
+    translate(screenBallPos.x, screenBallPos.y);
+    rotate(-radians(ballAngle));
+    image(ballImage, 0, 0, ballSize, ballSize);
+  popMatrix();
+}
+
+// This method gets called automatically when 
+// there is a collision
+void collision(Body b1, Body b2, float impulse)
+{
+  if ((b1 == ball && b2 == goal1) || (b2 == ball && b1 == goal1))
+  {
+    score2++;
+    goalScored = true;
+    text("GOAL!!!", width/3, height/4);
+  }
+  
+  if ((b1 == ball && b2 == goal2) || (b2 == ball && b1 == goal2))
+  {
+    score1++;
+    goalScored = true;
+    text("GOAL!!!", width/3, height/4);
+  }
+   
+}
