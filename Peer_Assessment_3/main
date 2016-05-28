@@ -1,0 +1,92 @@
+import ddf.minim.spi.*;
+import ddf.minim.signals.*;
+import ddf.minim.*;
+import ddf.minim.analysis.*;
+import ddf.minim.ugens.*;
+import ddf.minim.effects.*;
+
+Maxim maxim;
+float pw;
+
+// create instruments
+Keyboard keyboard1;
+DrumMachine drum1;
+
+// pictures
+PImage backgroundImage, titleImage, speakerLeft, speakerRight;
+
+void setup()
+{
+  size(800, 480);
+  frameRate(60);
+  
+  backgroundImage = loadImage("background4.jpg");
+  titleImage = loadImage("title.png");
+  speakerLeft = loadImage("speaker.png");
+  speakerRight = loadImage("speaker.png");
+  
+  maxim = new Maxim(this);
+  
+  float keyWidth = 50; 
+  float keyHeight = 100;
+  int numOctaves = 2;
+  float keyBoardPosX = width/2 - 7.5*keyWidth;
+  float keyBoardPosY = height - keyHeight;
+  
+  keyboard1 = new Keyboard (keyWidth, keyHeight, keyBoardPosX, keyBoardPosY, numOctaves);
+  
+  int numBeats = 16;
+  float buttonWidth = 30;
+  float buttonHeight = 20;
+  float posX = 20;
+  float posY = height - 1.5*keyHeight - buttonHeight*4;;
+  
+  drum1 = new DrumMachine(numBeats, buttonWidth, buttonHeight, posX, posY);
+
+}
+
+void draw()
+{
+  
+
+  image(backgroundImage, 0, 0); 
+
+  
+  imageMode(CENTER);
+  image(titleImage, width/2, height/6);
+  imageMode(CORNER);
+
+ 
+
+  image(speakerLeft, 30, 30);
+  image(speakerRight, width-130, 30);
+  speakerLeft.resize(100, 0);
+  speakerRight.resize(100, 0);
+  
+  keyboard1.display();
+  drum1.display();
+  
+}
+
+void keyPressed()
+{
+  keyboard1.notePressed(); 
+  pw = 0.3; 
+}
+
+void keyReleased()
+{  
+  keyboard1.noteReleased();
+  pw = 0;
+}
+
+void mousePressed()
+{
+  drum1.padPressed();
+  keyboard1.sliderPressed();
+}
+
+void mouseDragged()
+{
+  keyboard1.sliderDragged();
+}

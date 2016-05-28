@@ -1,0 +1,154 @@
+class DrumMachine
+{
+  AudioPlayer sample1;
+  AudioPlayer sample2; 
+  AudioPlayer sample3; 
+  AudioPlayer sample4;
+  
+  boolean[] track1;
+  boolean[] track2;
+  boolean[] track3;
+  boolean[] track4;
+  
+  int _playhead;
+  int _numBeats;
+  int _currentBeat;
+  float _buttonWidth;
+  float _buttonHeight;
+  int _numTracks = 4;
+  float _posX;
+  float _posY;
+  
+  DrumMachine(int numBeats, float buttonWidth, float buttonHeight, float posX, float posY)
+  {
+    _numBeats = 16;
+    _currentBeat = 0;
+    _buttonWidth = buttonWidth;
+    _buttonHeight = buttonHeight;
+    _posX = posX;
+    _posY = posY;
+
+    // sound
+    sample1 = maxim.loadFile("bd1.wav");
+    sample1.volume(1.0);
+    sample1.setLooping(false);
+    sample2 = maxim.loadFile("sn1.wav");
+    sample2.setLooping(false);
+    sample2.volume(1.0);
+    sample3 = maxim.loadFile("hh1.wav");
+    sample3.volume(1.0);
+    sample3.setLooping(false);
+    sample4 = maxim.loadFile("sn2.wav");
+    sample4.setLooping(false);
+    sample4.volume(1.0);
+    
+    sample1.setAnalysing(true);
+    sample2.setAnalysing(true);
+    sample3.setAnalysing(true);
+    sample4.setAnalysing(true);
+     
+    // set up the sequences
+    track1 = new boolean[_numBeats];
+    track2 = new boolean[_numBeats];
+    track3 = new boolean[_numBeats];
+    track4 = new boolean[_numBeats];
+  }
+  
+  void display()
+  {
+    stroke(255);
+    strokeWeight(4);
+    for (int i = 0; i <= _numTracks; i++)
+      line(_posX, _posY+(i*_buttonHeight), _posX+(_buttonWidth*_numBeats), _posY+(i*_buttonHeight));
+    for (int i = 0; i < _numBeats + 1; i++)
+      line(_posX+(i*_buttonWidth), _posY,_posX+(i*_buttonWidth), _posY+_buttonHeight*_numTracks);
+
+    // draw a moving square showing where the sequence is 
+    fill(0, 0, 200, 120);
+    rect(_currentBeat*_buttonWidth+_posX, _posY, _buttonWidth, _buttonHeight*_numTracks);
+  
+    for (int i = 0; i < _numBeats; i++)
+    {
+      noStroke();
+      fill(180, 0, 0);
+  
+      if (track1[i])
+        rect(_posX+i*_buttonWidth, _posY+(0*_buttonHeight), _buttonWidth, _buttonHeight);
+      if (track2[i])
+        rect(_posX+i*_buttonWidth, _posY+(1*_buttonHeight), _buttonWidth, _buttonHeight);
+      if (track3[i])
+        rect(_posX+i*_buttonWidth, _posY+(2*_buttonHeight), _buttonWidth, _buttonHeight);
+      if (track4[i])
+        rect(_posX+i*_buttonWidth, _posY+(3*_buttonHeight), _buttonWidth, _buttonHeight);
+    }
+  
+    _playhead ++;
+//    println("_playhead "+_playhead);
+    if (_playhead % 4 == 0) 
+    {
+      if (track1[_currentBeat]) // track1 wants to play on this beat
+      {
+        sample1.cue(0);
+        sample1.play();
+      }
+      if (track2[_currentBeat]) {
+        sample2.cue(0);
+        sample2.play();
+      }
+      if (track3[_currentBeat]) {
+        sample3.cue(0);  
+        sample3.play();
+      }
+      if (track4[_currentBeat]) {
+        sample4.cue(0);
+        sample4.play();
+      }
+      
+      // move to the next beat ready for next time
+      _currentBeat++;
+      if (_currentBeat >= _numBeats)
+        _currentBeat = 0;
+  
+    }  
+   
+    if (_playhead >= 4)
+      _playhead = 0; 
+      
+      
+    float pw = getPower();
+    
+    if(pw > 0.25 && _playhead % 4 == 0) 
+    {
+      fill(255);
+      rect(0, 0, width, height);
+    }
+  }  //end display
+  
+  
+  void padPressed() 
+  {
+    int index = (int) Math.floor((mouseX-_posX)*_numBeats/(_buttonWidth*_numBeats));   
+    int track = (int) Math.floor( (mouseY-_posY)*(1/_buttonHeight) );  
+    
+//    println("index "+index);
+//    println("track "+track);
+    
+    if(index < _numBeats && index >= 0)
+    {
+      if (track == 0)
+        track1[index] = !track1[index];
+      if (track == 1)
+        track2[index] = !track2[index];
+      if (track == 2)
+        track3[index] = !track3[index];
+      if (track == 3)
+        track4[index] = !track4[index];
+    }
+  }
+  
+  float getPower()
+  {
+    return (sample1.getAveragePower() + sample2.getAveragePower() + sample3.getAveragePower() + sample4.getAveragePower());
+  }
+  
+} // end class

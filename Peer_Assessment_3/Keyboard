@@ -1,0 +1,168 @@
+class Keyboard
+{
+    
+  float fc, res;
+  Slider f, q;
+  
+  int[] notes = {60, 62, 64, 65, 67, 69, 71, 72, 61, 63, 66, 68, 70, 
+                 72, 74, 76, 77, 79, 81, 83, 84, 73, 75, 78, 80, 82};
+  
+  WavetableSynth[] synth;
+  
+  float _whiteKeyWidth;
+  float _whiteKeyHeight;
+  float _blackKeyWidth;
+  float _blackKeyHeight;
+  float _keyBoardPosX;
+  float _keyBoardPosY;
+  float _startBlackKeyX;
+  int _numKeys;
+  int _octaves;
+  
+  // array for keys
+  ArrayList<keyObject> keys;
+  char[] keyLetters = {'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', 's', 'd', 'g', 'h', 'j', 
+                       'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', '2', '3', '5', '6', '7'};
+  
+  Keyboard(float keyWidth, float keyHeight, float keyBoardPosX, float keyBoardPosY, int numOctaves)
+  {
+    _whiteKeyWidth = keyWidth;
+    _whiteKeyHeight = keyHeight;
+    _keyBoardPosX = keyBoardPosX;
+    _keyBoardPosY = keyBoardPosY;
+    _octaves = numOctaves;
+    _numKeys = 13*numOctaves;
+    
+    _blackKeyWidth = 0.6*keyWidth;
+    _blackKeyHeight = 0.8*keyHeight;
+    _startBlackKeyX = keyWidth - (0.6*keyWidth/2);
+    
+    keys = new ArrayList<keyObject>();
+    //create keys  
+    for (int i = 0; i < 8; i++)   // white keys
+    {
+      keys.add(new keyObject(i*_whiteKeyWidth+_keyBoardPosX,_keyBoardPosY,keyWidth,keyHeight,'w'));
+    }
+    for (int i = 8; i < 10; i++)   // black keys
+    {
+      keys.add(new keyObject( (i-8)*_whiteKeyWidth+_keyBoardPosX+_startBlackKeyX,_keyBoardPosY,_blackKeyWidth,_blackKeyHeight,'b'));
+    }
+    for (int i = 10; i < 13; i++)   // black keys
+    {
+      keys.add(new keyObject( (i-7)*_whiteKeyWidth+_keyBoardPosX+_startBlackKeyX,_keyBoardPosY,_blackKeyWidth,_blackKeyHeight,'b'));
+    }
+    
+    if(_octaves == 2)
+    {
+      for (int i = 13; i < 21; i++)   // white keys
+      {
+        keys.add(new keyObject( (i-6)*_whiteKeyWidth+_keyBoardPosX,_keyBoardPosY,keyWidth,keyHeight,'w'));
+      }
+      for (int i = 21; i < 23; i++)   // black keys
+      {
+        keys.add(new keyObject( (i-14)*_whiteKeyWidth+_keyBoardPosX+_startBlackKeyX,_keyBoardPosY,_blackKeyWidth,_blackKeyHeight,'b'));
+      }
+      for (int i = 23; i < 26; i++)   // black keys
+      {
+        keys.add(new keyObject( (i-13)*_whiteKeyWidth+_keyBoardPosX+_startBlackKeyX,_keyBoardPosY,_blackKeyWidth,_blackKeyHeight,'b'));
+      }
+    }
+    
+    // sound
+    synth = new WavetableSynth[_numKeys];
+    for(int i = 0; i < _numKeys; i++)
+    {
+      synth[i] = maxim.createWavetableSynth(514);
+//      synth[i].setAnalyzing(true);
+    }
+      
+      
+    // sound processing
+    f = new Slider("filter", 20, 0, 100, width - 250, (int)(height-_whiteKeyHeight-110), 200, 20, HORIZONTAL);
+    q = new Slider("res", 20, 0, 100, width - 250, (int)(height-_whiteKeyHeight-90), 200, 20, HORIZONTAL);
+  }
+  
+  
+  void display()
+  {
+    // draw keys 
+    for (int i = 0; i < _numKeys; i++) 
+    {
+      keyObject _key = keys.get(i);
+      _key.display();
+    }
+    
+    // show sliders
+    if (f.get()!=0) 
+    {
+      fc=f.get()*100;
+      for(int i = 0; i < _numKeys; i++)
+        synth[i].setFilter(fc, res);
+    }
+  
+    if (q.get() !=0 ) {
+      res=q.get() / 50;
+      for(int i = 0; i < _numKeys; i++)
+        synth[i].setFilter(fc, res);
+    }
+
+    f.display();
+    q.display();
+  } 
+  
+  // use this void to detect keyboard pressed key
+  void notePressed() 
+  { 
+    for(int i = 0; i < _numKeys; i++)
+    {
+      if (key == keyLetters[i])
+      {
+        if(i == 7 && _octaves ==2)
+          i = 13;
+        keyObject _key = keys.get(i);
+        _key.setState(true);
+        synth[i].setFrequency(mtof[notes[i]]);
+        synth[i].play();
+        synth[i].volume(1.0);
+      }
+    }
+  }
+  
+  // use this void to detect keyboard released key
+  void noteReleased()
+  {
+    for(int i = 0; i < _numKeys; i++)
+    {
+      if (key == keyLetters[i])
+      {
+        if(i == 7 && _octaves ==2)
+          i = 13;
+        keyObject _key = keys.get(i);
+        _key.setState(false);
+        synth[i].stop();
+      }
+    }
+  }
+  
+  void sliderPressed()
+  {
+    f.mousePressed();
+    q.mousePressed();
+  }
+  
+  void sliderDragged()
+  {
+    f.mouseDragged();
+    q.mouseDragged();
+  
+  }
+  
+//  float getPower()
+//  {
+//    float power = 0;
+//    for(int i = 0; i < _numBeats; i++)
+//      power = power + synth[i].getAveragePower();
+//    return power;
+//  }
+  
+}
